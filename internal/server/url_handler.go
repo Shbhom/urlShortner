@@ -5,14 +5,18 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
+	"github.com/shbhom/urlShortner/internal/db"
 	"github.com/shbhom/urlShortner/internal/models"
+	"github.com/shbhom/urlShortner/internal/pkg/metrics"
 )
 
 func (s *Server) AddUrlHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		var body models.CreateUrlDTO
 
 		if err := s.Services.ParseBody(r.Body, &body); err != nil {
@@ -44,13 +48,28 @@ func (s *Server) AddUrlHandler() http.HandlerFunc {
 func (s *Server) RedirectionHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("handling redirection request")
+		start := time.Now()
+		defer func() {
+			metrics.RedirectRequestHistogram.Observe(time.Since(start).Seconds())
+		}()
+
 		code := mux.Vars(r)["code"]
 		url, err := s.Services.GetUrl(code)
 		if err != nil {
+			if errors.Is(err, db.ErrURLNotFound) {
+				metrics.RedirectNotFoundTotal.Inc()
+				metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "404").Inc()
+				slog.Error("error while fetching target Url", "error", err.Error())
+				s.RespondMessage(w, &RespondMessage{Message: "No record found for provided code"}, http.StatusNotFound)
+				return
+			}
 			slog.Error("Error while fetching target Url", err.Error(), "error")
+			metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "500").Inc()
 			s.RespondMessage(w, &RespondMessage{Message: "Error while fetching target Url"}, http.StatusInternalServerError)
 			return
 		}
+		metrics.RedirectionSuccessTotal.Inc()
+		metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "308").Inc()
 		http.Redirect(w, r, url.String(), http.StatusPermanentRedirect)
 	}
 }

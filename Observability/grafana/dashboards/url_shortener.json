@@ -1,0 +1,63 @@
+{
+  "title": "URL Shortener V1 Metrics",
+  "panels": [
+    {
+      "title": "Throughput (RPS)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(redirect_request_total[1m])) by (endpoint, status)", "legendFormat": "{{endpoint}} - {{status}}" }
+      ]
+    },
+    {
+      "title": "P95 Latency (Seconds)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(redirect_request_duration_seconds_bucket[1m])) by (le))", "legendFormat": "P95 Latency" }
+      ]
+    },
+    {
+      "title": "Database Operations (Ops/sec)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum(rate(postgres_reads_total[1m]))", "legendFormat": "DB Reads" },
+        { "expr": "sum(rate(short_urls_created_total[1m]))", "legendFormat": "DB Writes" }
+      ]
+    },
+    {
+      "title": "Active Goroutines",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "go_goroutines", "legendFormat": "Goroutines" }
+      ]
+    },
+    {
+      "title": "Connection Pool Status",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "go_sql_in_use_connections", "legendFormat": "In Use" },
+        { "expr": "go_sql_idle_connections", "legendFormat": "Idle" },
+        { "expr": "go_sql_open_connections", "legendFormat": "Total Open" }
+      ]
+    },
+    {
+      "title": "Connection Wait Pressure",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "rate(go_sql_wait_count_total[1m])", "legendFormat": "Wait Count/sec" },
+        { "expr": "rate(go_sql_wait_duration_seconds_total[1m])", "legendFormat": "Wait Duration/sec" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  }
+}

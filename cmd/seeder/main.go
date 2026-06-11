@@ -16,7 +16,7 @@ func main() {
 	cfg := config.LoadConfig("local")
 
 	slog.Info("Connecting to Postgres...")
-	// IMPORTANT NOTE: db.NewPostgres returns a struct that contains `Client *sql.DB`. 
+	// IMPORTANT NOTE: db.NewPostgres returns a struct that contains `Client *sql.DB`.
 	// You MUST extract the Client to use it.
 	database := db.NewPostgres(cfg.DB_URL)
 	defer database.Client.Close()

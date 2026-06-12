@@ -70,6 +70,7 @@ func (s *Server) RedirectionHandler() http.HandlerFunc {
 		}
 		metrics.RedirectionSuccessTotal.Inc()
 		metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "308").Inc()
-		http.Redirect(w, r, url.String(), http.StatusPermanentRedirect)
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+		http.Redirect(w, r, url.String(), http.StatusFound)
 	}
 }

@@ -20,6 +20,7 @@ func NewService(dbUrl, redisAddr string, ttl int) *Service {
 	cacheTTL := time.Duration(ttl * int(time.Minute))
 	redis := redis.NewCache(redisAddr, cacheTTL)
 	metrics.RegisterDBStatsCollector(db.Client)
+	metrics.RegisterRedisStatsCollector(redis.Client)
 	return &Service{
 		url:   db,
 		cache: redis,

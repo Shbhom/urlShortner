@@ -8,6 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/shbhom/urlShortner/internal/models"
+	"github.com/shbhom/urlShortner/internal/pkg/metrics"
 )
 
 type Cache struct {
@@ -30,9 +31,21 @@ func NewCache(redisAddr string, urlTTL time.Duration) *Cache {
 }
 
 func (c *Cache) Get(ctx context.Context, shortCode string) (string, error) {
-	return c.Client.Get(ctx, fmt.Sprintf("url:%s", shortCode)).Result()
+	start := time.Now()
+	res, err := c.Client.Get(ctx, fmt.Sprintf("url:%s", shortCode)).Result()
+	metrics.RedisGetDurationSeconds.Observe(time.Since(start).Seconds())
+	switch err {
+	case redis.Nil:
+		metrics.RedisMissesTotal.Inc()
+	case nil:
+		metrics.RedisHitsTotal.Inc()
+	}
+	return res, err
 }
 
 func (c *Cache) Set(ctx context.Context, data models.UrlData) error {
-	return c.Client.Set(ctx, fmt.Sprintf("url:%s", data.ShortCode), data.TargetUrl, c.TTL).Err()
+	start := time.Now()
+	err := c.Client.Set(ctx, fmt.Sprintf("url:%s", data.ShortCode), data.TargetUrl, c.TTL).Err()
+	metrics.RedisSetDurationSeconds.Observe(time.Since(start).Seconds())
+	return err
 }

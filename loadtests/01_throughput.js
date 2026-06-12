@@ -2,13 +2,14 @@ import http from 'k6/http';
 import { check } from 'k6';
 
 export const options = {
-    stages: [
-        { duration: '2m', target: 50 },
-        { duration: '2m', target: 100 },
-        { duration: '2m', target: 250 },
-        { duration: '2m', target: 500 },
-        { duration: '2m', target: 1000 },
-    ],
+    scenarios: {
+        safe_load: {
+            executor: 'shared-iterations',
+            vus: 200,
+            iterations: 1000000,
+            maxDuration: '10m',
+        },
+    },
 };
 
 export default function () {

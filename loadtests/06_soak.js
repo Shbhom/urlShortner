@@ -2,8 +2,14 @@ import http from 'k6/http';
 import { check } from 'k6';
 
 export const options = {
-    duration: '30m',
-    vus: 200,
+    scenarios: {
+        safe_load: {
+            executor: 'shared-iterations',
+            vus: 200,
+            iterations: 1000000,
+            maxDuration: '30m',
+        },
+    },
 };
 
 export default function () {

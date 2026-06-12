@@ -12,6 +12,8 @@ import (
 
 type Config struct {
 	DB_URL        string `json:"DB_URL"`
+	REDIS_ADDR    string
+	URL_TTL       int
 	BASE_URL      string
 	API_PORT      int
 	ChainCertPath string
@@ -49,6 +51,15 @@ func LoadConfig(envType string) *Config {
 	}
 	if v.IsSet("PEM_PATH") {
 		conf.PemCertPath = v.GetString("PEM_PATH")
+	}
+	if v.IsSet("REDIS_ADDR") {
+		conf.REDIS_ADDR = v.GetString("REDIS_ADDR")
+	}
+	if v.IsSet("URL_TTL") {
+		conf.URL_TTL = v.GetInt("URL_TTL")
+	} else {
+		// default ttl for 60 Minutes
+		conf.URL_TTL = 60
 	}
 	return &conf
 }

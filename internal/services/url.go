@@ -1,9 +1,15 @@
 package services
 
 import (
+	"context"
 	"crypto/rand"
+	"errors"
+	"fmt"
+	"log/slog"
 	"math/big"
-	"net/url"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/shbhom/urlShortner/internal/models"
 )
 
 const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -27,25 +33,38 @@ func (svc *Service) generateShortCode(length int) (string, error) {
 	return string(result), nil
 }
 
-func (svc *Service) Addurl(url string) (string, error) {
+func (svc *Service) Addurl(ctx context.Context, url string) (string, error) {
 	key, err := svc.generateShortCode(8)
 	if err != nil {
 		return "", err
 	}
-	if err := svc.url.AddUrl(url, key); err != nil {
+	if err := svc.url.AddUrl(ctx, models.UrlData{ShortCode: key, TargetUrl: url}); err != nil {
 		return "", err
 	}
 	return key, nil
 }
 
-func (svc *Service) GetUrl(code string) (*url.URL, error) {
-	tUrl, err := svc.url.GetUrlByCode(code)
-	if err != nil {
-		return nil, err
+func (svc *Service) GetUrl(ctx context.Context, code string) (string, error) {
+	cacheUrl, err := svc.cache.Get(ctx, code)
+	if err == nil {
+		slog.Info(fmt.Sprintf("Cache hit for code: %s", code))
+		return cacheUrl, nil
+	} else if !errors.Is(err, redis.Nil) {
+		slog.Error("Redis cache error", "error", err)
+	} else {
+		slog.Warn(fmt.Sprintf("No cache found for code: %s", code))
 	}
-	pUrl, err := url.Parse(tUrl)
+
+	//url not found in cache searching DB
+	DBUrl, err := svc.url.GetUrlByCode(ctx, code)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return pUrl, err
+	
+	//After fetching from DB setting url in redis cache
+	if err := svc.cache.Set(ctx, models.UrlData{ShortCode: code, TargetUrl: DBUrl}); err != nil {
+		slog.WarnContext(ctx, fmt.Sprintf("Error while setting TargetUrl %s for code %s", DBUrl, code))
+	}
+	
+	return DBUrl, nil
 }

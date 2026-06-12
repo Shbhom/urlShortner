@@ -1,19 +1,27 @@
 package services
 
 import (
-	"github.com/shbhom/urlShortner/internal/db"
+	"time"
+
+	"github.com/shbhom/urlShortner/internal/db/postgres"
+	"github.com/shbhom/urlShortner/internal/db/redis"
+	"github.com/shbhom/urlShortner/internal/pkg/cache"
 	"github.com/shbhom/urlShortner/internal/pkg/metrics"
 	"github.com/shbhom/urlShortner/internal/pkg/url"
 )
 
 type Service struct {
-	url url.Repository
+	url   url.Repository
+	cache cache.Repository
 }
 
-func NewService(dbUrl string) *Service {
-	db := db.NewPostgres(dbUrl)
+func NewService(dbUrl, redisAddr string, ttl int) *Service {
+	db := postgres.NewPostgres(dbUrl)
+	cacheTTL := time.Duration(ttl * int(time.Minute))
+	redis := redis.NewCache(redisAddr, cacheTTL)
 	metrics.RegisterDBStatsCollector(db.Client)
 	return &Service{
-		url: db,
+		url:   db,
+		cache: redis,
 	}
 }

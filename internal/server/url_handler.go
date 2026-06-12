@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"github.com/shbhom/urlShortner/internal/db"
+	"github.com/shbhom/urlShortner/internal/db/postgres"
 	"github.com/shbhom/urlShortner/internal/models"
 	"github.com/shbhom/urlShortner/internal/pkg/metrics"
 )
@@ -30,7 +30,7 @@ func (s *Server) AddUrlHandler() http.HandlerFunc {
 			s.RespondMessage(w, &RespondMessage{Message: "Error while parsing request body"}, http.StatusBadRequest)
 			return
 		}
-		code, err := s.Services.Addurl(body.Url)
+		code, err := s.Services.Addurl(r.Context(), body.Url)
 		if err != nil {
 			slog.Error("Error while inserting record for url", err.Error(), "error")
 			s.RespondMessage(w, &RespondMessage{Message: "Error while adding record to db"}, http.StatusInternalServerError)
@@ -54,9 +54,9 @@ func (s *Server) RedirectionHandler() http.HandlerFunc {
 		}()
 
 		code := mux.Vars(r)["code"]
-		url, err := s.Services.GetUrl(code)
+		url, err := s.Services.GetUrl(r.Context(), code)
 		if err != nil {
-			if errors.Is(err, db.ErrURLNotFound) {
+			if errors.Is(err, postgres.ErrURLNotFound) {
 				metrics.RedirectNotFoundTotal.Inc()
 				metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "404").Inc()
 				slog.Error("error while fetching target Url", "error", err.Error())
@@ -70,6 +70,6 @@ func (s *Server) RedirectionHandler() http.HandlerFunc {
 		}
 		metrics.RedirectionSuccessTotal.Inc()
 		metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "308").Inc()
-		http.Redirect(w, r, url.String(), http.StatusPermanentRedirect)
+		http.Redirect(w, r, url, http.StatusFound)
 	}
 }

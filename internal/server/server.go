@@ -13,7 +13,7 @@ import (
 func Run(envType string) {
 	config := config.LoadConfig(envType)
 	r := mux.NewRouter()
-	svc := services.NewService(config.DB_URL)
+	svc := services.NewService(config.DB_URL, config.REDIS_ADDR, config.URL_TTL)
 	serve := &Server{
 		Router:   r,
 		Config:   config,

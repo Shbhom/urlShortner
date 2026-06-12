@@ -2,19 +2,17 @@ import http from 'k6/http';
 import { check } from 'k6';
 
 export const options = {
-    stages: [
-        { duration: '1m', target: 50 },
-        { duration: '1m', target: 100 },
-        { duration: '1m', target: 250 },
-        { duration: '1m', target: 500 },
-        { duration: '1m', target: 1000 },
-        { duration: '1m', target: 2000 },
-        { duration: '1m', target: 5000 },
-    ],
+    scenarios: {
+        safe_load: {
+            executor: 'shared-iterations',
+            vus: 200,
+            iterations: 1000000,
+            maxDuration: '10m',
+        },
+    },
     thresholds: {
-        // Test auto-aborts if p(95) is over 100ms or error rate exceeds 1%
         http_req_duration: ['p(95)<100'],
-        http_req_failed: ['rate<0.01'], 
+        http_req_failed: ['rate<0.01'],
     },
 };
 

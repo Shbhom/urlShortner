@@ -21,5 +21,5 @@ export default function () {
     const code = `seed_${randomId.toString().padStart(6, '0')}`;
     
     const res = http.get(`http://localhost:8000/r/${code}`, { redirects: 0 });
-    check(res, { 'status is 308': (r) => r.status === 308 });
+    check(res, { 'status is 302': (r) => r.status === 302 });
 }

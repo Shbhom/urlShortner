@@ -29,6 +29,6 @@ export default function () {
     if (isInvalid) {
         check(res, { 'status is 404': (r) => r.status === 404 });
     } else {
-        check(res, { 'status is 308': (r) => r.status === 308 });
+        check(res, { 'status is 302': (r) => r.status === 302 });
     }
 }

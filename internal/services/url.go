@@ -2,39 +2,24 @@ package services
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"log/slog"
-	"math/big"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/shbhom/urlShortner/internal/models"
 )
 
-const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-func (svc *Service) generateShortCode(length int) (string, error) {
-	result := make([]byte, length)
-
-	for i := range result {
-		n, err := rand.Int(
-			rand.Reader,
-			big.NewInt(int64(len(alphabet))),
-		)
-
-		if err != nil {
-			return "", err
-		}
-
-		result[i] = alphabet[n.Int64()]
-	}
-
-	return string(result), nil
+func (svc *Service) generateShortCode(id uint64) (string, error) {
+	return svc.sqid.Encode([]uint64{id})
 }
 
 func (svc *Service) Addurl(ctx context.Context, url string) (string, error) {
-	key, err := svc.generateShortCode(8)
+	nextId, err := svc.url.GetNextSequence(ctx)
+	if err != nil {
+		return "", fmt.Errorf("Error while getting the counter sequence from postgres: %w", err)
+	}
+	key, err := svc.generateShortCode(nextId)
 	if err != nil {
 		return "", err
 	}
@@ -45,14 +30,24 @@ func (svc *Service) Addurl(ctx context.Context, url string) (string, error) {
 }
 
 func (svc *Service) GetUrl(ctx context.Context, code string) (string, error) {
+	recordhit := func() {
+		select {
+		case svc.AnalyticsChan <- code:
+			// Successfully queued to be processed by a worker
+		default:
+			// The queue is full; drop the event so we don't block the user's redirect
+			slog.Warn("Analytics channel full, dropping hit", "code", code)
+		}
+	}
 	cacheUrl, err := svc.cache.Get(ctx, code)
 	if err == nil {
-		slog.Info(fmt.Sprintf("Cache hit for code: %s", code))
+		slog.Debug(fmt.Sprintf("Cache hit for code: %s", code))
+		recordhit()
 		return cacheUrl, nil
 	} else if !errors.Is(err, redis.Nil) {
 		slog.Error("Redis cache error", "error", err)
 	} else {
-		slog.Warn(fmt.Sprintf("No cache found for code: %s", code))
+		slog.Debug(fmt.Sprintf("No cache found for code: %s", code))
 	}
 
 	//url not found in cache searching DB
@@ -60,11 +55,11 @@ func (svc *Service) GetUrl(ctx context.Context, code string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	//After fetching from DB setting url in redis cache
 	if err := svc.cache.Set(ctx, models.UrlData{ShortCode: code, TargetUrl: DBUrl}); err != nil {
 		slog.WarnContext(ctx, fmt.Sprintf("Error while setting TargetUrl %s for code %s", DBUrl, code))
 	}
-	
+	recordhit()
 	return DBUrl, nil
 }

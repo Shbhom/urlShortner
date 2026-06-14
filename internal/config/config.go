@@ -11,13 +11,14 @@ import (
 )
 
 type Config struct {
-	DB_URL        string `json:"DB_URL"`
-	REDIS_ADDR    string
-	URL_TTL       int
-	BASE_URL      string
-	API_PORT      int
-	ChainCertPath string
-	PemCertPath   string
+	DB_URL             string `json:"DB_URL"`
+	REDIS_ADDR         string
+	URL_TTL            int
+	SHORT_CODE_MIN_LEN uint8
+	BASE_URL           string
+	API_PORT           int
+	ChainCertPath      string
+	PemCertPath        string
 }
 
 func LoadConfig(envType string) *Config {
@@ -60,6 +61,12 @@ func LoadConfig(envType string) *Config {
 	} else {
 		// default ttl for 60 Minutes
 		conf.URL_TTL = 60
+	}
+	if v.IsSet("SHORT_CODE_MIN_LEN") {
+		conf.SHORT_CODE_MIN_LEN = v.GetUint8("SHORT_CODE_MIN_LEN")
+	} else {
+		// default ttl for 60 Minutes
+		conf.SHORT_CODE_MIN_LEN = uint8(6)
 	}
 	return &conf
 }

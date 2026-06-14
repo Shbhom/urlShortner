@@ -3,8 +3,6 @@ package services
 import (
 	"encoding/json"
 	"io"
-
-	"github.com/go-playground/validator/v10"
 )
 
 func (svc *Service) ParseBody(req_body io.Reader, v any) error {
@@ -12,5 +10,5 @@ func (svc *Service) ParseBody(req_body io.Reader, v any) error {
 	if err != nil {
 		return err
 	}
-	return validator.New().Struct(v)
+	return svc.validator.Struct(v)
 }

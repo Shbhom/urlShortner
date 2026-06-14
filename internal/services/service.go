@@ -1,28 +1,55 @@
 package services
 
 import (
-	"time"
+	"context"
+	"sync"
 
-	"github.com/shbhom/urlShortner/internal/db/postgres"
-	"github.com/shbhom/urlShortner/internal/db/redis"
-	"github.com/shbhom/urlShortner/internal/pkg/cache"
-	"github.com/shbhom/urlShortner/internal/pkg/metrics"
-	"github.com/shbhom/urlShortner/internal/pkg/url"
+	"github.com/go-playground/validator/v10"
+	"github.com/shbhom/urlShortner/internal/models"
+	"github.com/sqids/sqids-go"
 )
 
-type Service struct {
-	url   url.Repository
-	cache cache.Repository
+type URLRepository interface {
+	GetNextSequence(ctx context.Context) (uint64, error)
+	AddUrl(ctx context.Context, data models.UrlData) error
+	GetUrlByCode(ctx context.Context, short_code string) (string, error)
+	BulkUpdateUrlLastInvokation(ctx context.Context, data map[string]string) error
 }
 
-func NewService(dbUrl, redisAddr string, ttl int) *Service {
-	db := postgres.NewPostgres(dbUrl)
-	cacheTTL := time.Duration(ttl * int(time.Minute))
-	redis := redis.NewCache(redisAddr, cacheTTL)
-	metrics.RegisterDBStatsCollector(db.Client)
-	metrics.RegisterRedisStatsCollector(redis.Client)
-	return &Service{
-		url:   db,
-		cache: redis,
+type CacheRepository interface {
+	Get(ctx context.Context, shortCode string) (string, error)
+	Set(ctx context.Context, data models.UrlData) error
+	Rename(ctx context.Context, oldKey, newKey string) error
+	HGetAll(ctx context.Context, key string) (map[string]string, error)
+	Delete(ctx context.Context, key string) error
+	RecordInvokation(ctx context.Context, code string) error
+}
+
+type Service struct {
+	url           URLRepository
+	cache         CacheRepository
+	sqid          *sqids.Sqids
+	validator     *validator.Validate
+	AnalyticsChan chan string
+	AnalyticsWG   *sync.WaitGroup
+}
+
+func NewService(minLen uint8, urlRepo URLRepository, cacheRepo CacheRepository) *Service {
+	sq := NewSquid(minLen)
+	vali := validator.New()
+	wg := &sync.WaitGroup{}
+	wg.Add(5)
+	srv := &Service{
+		url:           urlRepo,
+		cache:         cacheRepo,
+		sqid:          sq,
+		validator:     vali,
+		AnalyticsChan: make(chan string, 10000),
+		AnalyticsWG:   wg,
 	}
+
+	for _ = range 5 {
+		go srv.invocationWorker()
+	}
+	return srv
 }

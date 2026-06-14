@@ -16,10 +16,21 @@ type Cache struct {
 	TTL    time.Duration
 }
 
+var (
+	ANALYTICS_KEY     = "analytics_batch"
+	ANALYTICS_NEW_KEY = "analytics_processing:%s"
+)
+
 func NewCache(redisAddr string, urlTTL time.Duration) *Cache {
-	client := redis.NewClient(&redis.Options{
-		Addr: redisAddr,
-	})
+	var client *redis.Client
+	if Opts, err := redis.ParseURL(redisAddr); err != nil {
+		log.Fatal("error while parsing redis Opts")
+	} else {
+		client = redis.NewClient(Opts)
+	}
+	if client == nil {
+		log.Fatal("unable to connect redis")
+	}
 	ctx := context.Background()
 	if cmd := client.Ping(ctx); cmd.Err() != nil {
 		log.Fatal("Unable to ping, redis client")
@@ -48,4 +59,21 @@ func (c *Cache) Set(ctx context.Context, data models.UrlData) error {
 	err := c.Client.Set(ctx, fmt.Sprintf("url:%s", data.ShortCode), data.TargetUrl, c.TTL).Err()
 	metrics.RedisSetDurationSeconds.Observe(time.Since(start).Seconds())
 	return err
+}
+
+func (c *Cache) RecordInvokation(ctx context.Context, code string) error {
+	now := time.Now().Unix()
+	return c.Client.HSet(ctx, ANALYTICS_KEY, code, now).Err()
+}
+
+func (c *Cache) Rename(ctx context.Context, oldKey, newKey string) error {
+	return c.Client.Rename(ctx, oldKey, newKey).Err()
+}
+
+func (c *Cache) HGetAll(ctx context.Context, key string) (map[string]string, error) {
+	return c.Client.HGetAll(ctx, key).Result()
+}
+
+func (c *Cache) Delete(ctx context.Context, key string) error {
+	return c.Client.Del(ctx, key).Err()
 }

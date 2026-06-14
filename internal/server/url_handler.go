@@ -22,17 +22,17 @@ func (s *Server) AddUrlHandler() http.HandlerFunc {
 		if err := s.Services.ParseBody(r.Body, &body); err != nil {
 			var ve validator.ValidationErrors
 			if errors.As(err, &ve) {
-				slog.Error("Received Invalid request body", err.Error(), "error")
+				slog.Error("Received Invalid request body", "error", err.Error())
 				s.RespondMessage(w, &RespondMessage{Message: "Received Invalid request body: either url missing or not https"}, http.StatusBadRequest)
 				return
 			}
-			slog.Error("Error while parsing request body: ", err.Error(), "error")
+			slog.Error("Error while parsing request body: ", "error", err.Error())
 			s.RespondMessage(w, &RespondMessage{Message: "Error while parsing request body"}, http.StatusBadRequest)
 			return
 		}
 		code, err := s.Services.Addurl(r.Context(), body.Url)
 		if err != nil {
-			slog.Error("Error while inserting record for url", err.Error(), "error")
+			slog.Error("Error while inserting record for url", "error", err.Error())
 			s.RespondMessage(w, &RespondMessage{Message: "Error while adding record to db"}, http.StatusInternalServerError)
 			return
 		}
@@ -63,14 +63,13 @@ func (s *Server) RedirectionHandler() http.HandlerFunc {
 				s.RespondMessage(w, &RespondMessage{Message: "No record found for provided code"}, http.StatusNotFound)
 				return
 			}
-			slog.Error("Error while fetching target Url", err.Error(), "error")
+			slog.Error("Error while fetching target Url", "error", err.Error())
 			metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "500").Inc()
 			s.RespondMessage(w, &RespondMessage{Message: "Error while fetching target Url"}, http.StatusInternalServerError)
 			return
 		}
 		metrics.RedirectionSuccessTotal.Inc()
-		metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "308").Inc()
-		w.Header().Set("Cache-Control", "public, max-age=3600")
+		metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "302").Inc()
 		http.Redirect(w, r, url, http.StatusFound)
 	}
 }

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -33,7 +34,13 @@ func LoadConfig(envType string) *Config {
 	v.SetConfigFile(fmt.Sprintf("%s/config_%s.json", configDir, envType))
 
 	if err := v.ReadInConfig(); err != nil {
-		log.Fatal("Unable to read config file: ", err)
+		notfound := viper.ConfigFileNotFoundError{}
+		if errors.As(err, &notfound) {
+			slog.Warn("couldn't find Config file: reading env")
+			v.AutomaticEnv()
+		} else {
+			log.Fatal("Unable to read config file: ", err)
+		}
 	}
 
 	slog.Info(fmt.Sprintf("read config file %s", v.ConfigFileUsed()))
@@ -67,6 +74,19 @@ func LoadConfig(envType string) *Config {
 	} else {
 		// default ttl for 60 Minutes
 		conf.SHORT_CODE_MIN_LEN = uint8(6)
+	}
+
+	if conf.DB_URL == "" {
+		log.Fatal("DB_URL is required")
+	}
+	if conf.REDIS_ADDR == "" {
+		log.Fatal("REDIS_ADDR is required")
+	}
+	if conf.API_PORT == 0 {
+		log.Fatal("API_PORT is required")
+	}
+	if conf.BASE_URL == "" {
+		log.Fatal("BASE_URL is required")
 	}
 	return &conf
 }

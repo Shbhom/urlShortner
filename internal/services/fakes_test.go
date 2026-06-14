@@ -14,9 +14,11 @@ import (
 
 type FakeURLRepo struct {
 	sync.RWMutex
-	urls        map[string]models.UrlData
-	seq         uint64
-	bulkUpdates []map[string]string
+	urls                           map[string]models.UrlData
+	seq                            uint64
+	bulkUpdates                    []map[string]string
+	SimulateGetNextSequenceError bool
+	SimulateBulkUpdateError      bool
 }
 
 func NewFakeURLRepo() *FakeURLRepo {
@@ -29,6 +31,9 @@ func NewFakeURLRepo() *FakeURLRepo {
 func (f *FakeURLRepo) GetNextSequence(ctx context.Context) (uint64, error) {
 	f.Lock()
 	defer f.Unlock()
+	if f.SimulateGetNextSequenceError {
+		return 0, errors.New("db error")
+	}
 	f.seq++
 	return f.seq, nil
 }
@@ -58,6 +63,9 @@ func (f *FakeURLRepo) GetBulkUpdates() []map[string]string {
 func (f *FakeURLRepo) BulkUpdateUrlLastInvokation(ctx context.Context, data map[string]string) error {
 	f.Lock()
 	defer f.Unlock()
+	if f.SimulateBulkUpdateError {
+		return errors.New("db bulk error")
+	}
 	f.bulkUpdates = append(f.bulkUpdates, data)
 	return nil
 }
@@ -143,4 +151,10 @@ func (f *FakeCacheRepo) RecordInvokation(ctx context.Context, code string) error
 	}
 	f.hashes[key][code] = fmt.Sprintf("%d", time.Now().Unix())
 	return nil
+}
+
+func (f *FakeCacheRepo) GetHashesCount() int {
+	f.RLock()
+	defer f.RUnlock()
+	return len(f.hashes)
 }

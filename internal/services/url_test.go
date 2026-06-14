@@ -31,6 +31,22 @@ func TestService_AddAndGetUrl(t *testing.T) {
 	assert.Equal(t, "https://example.com", targetUrl)
 }
 
+func TestService_Addurl_DBFailure(t *testing.T) {
+	// Setup
+	fakeDb := services.NewFakeURLRepo()
+	fakeDb.SimulateGetNextSequenceError = true
+	fakeCache := services.NewFakeCacheRepo()
+	svc := services.NewService(6, fakeDb, fakeCache)
+
+	ctx := context.Background()
+
+	// Action
+	_, err := svc.Addurl(ctx, "https://example.com")
+
+	// Assertions
+	assert.Error(t, err)
+}
+
 func TestService_CacheFallback(t *testing.T) {
 	// Setup
 	fakeDb := services.NewFakeURLRepo()
@@ -117,4 +133,21 @@ func TestService_FlushAnalytics(t *testing.T) {
 	hash, err := fakeCache.HGetAll(ctx, appredis.ANALYTICS_KEY)
 	assert.NoError(t, err)
 	assert.Empty(t, hash)
+}
+
+func TestService_FlushAnalytics_DBFailure(t *testing.T) {
+	fakeDb := services.NewFakeURLRepo()
+	fakeDb.SimulateBulkUpdateError = true
+	fakeCache := services.NewFakeCacheRepo()
+	svc := services.NewService(6, fakeDb, fakeCache)
+
+	ctx := context.Background()
+
+	err := fakeCache.RecordInvokation(ctx, "test_code")
+	assert.NoError(t, err)
+
+	svc.FlushAnalytics(ctx)
+
+	// Since DB failed, the hash should not be deleted
+	assert.Greater(t, fakeCache.GetHashesCount(), 0)
 }

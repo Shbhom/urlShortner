@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS shortned_url
+DROP TABLE IF EXISTS short_urls

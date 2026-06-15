@@ -73,3 +73,33 @@ var (
 		},
 	)
 )
+
+// Redis Metrics
+var (
+	RedisHitsTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "redis_hits_total",
+			Help: "Total number of successful redis cache hits",
+		},
+	)
+	RedisMissesTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "redis_misses_total",
+			Help: "Total number of redis cache misses",
+		},
+	)
+	RedisGetDurationSeconds = promauto.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "redis_get_duration_seconds",
+			Help:    "Histogram of redis get latencies",
+			Buckets: prometheus.DefBuckets,
+		},
+	)
+	RedisSetDurationSeconds = promauto.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "redis_set_duration_seconds",
+			Help:    "Histogram of redis set latencies",
+			Buckets: prometheus.DefBuckets,
+		},
+	)
+)

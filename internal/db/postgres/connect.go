@@ -1,4 +1,4 @@
-package db
+package postgres
 
 import (
 	"database/sql"
@@ -23,7 +23,7 @@ func NewPostgres(dbUrl string) *DB {
 	c.SetMaxOpenConns(100)
 	c.SetMaxIdleConns(30)
 	c.SetConnMaxLifetime(5 * time.Minute)
-	
+
 	return &DB{
 		Client: c,
 	}

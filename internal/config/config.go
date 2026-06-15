@@ -48,6 +48,11 @@ func LoadConfig(envType string) *Config {
 	}
 	if v.IsSet("BASE_URL") {
 		conf.BASE_URL = v.GetString("BASE_URL")
+	} else {
+		// base url for service to be deployed on render
+		if v.IsSet("RENDER_EXTERNAL_URL") {
+			conf.BASE_URL = v.GetString("RENDER_EXTERNAL_URL")
+		}
 	}
 	if v.IsSet("API_PORT") {
 		conf.API_PORT = v.GetInt("API_PORT")

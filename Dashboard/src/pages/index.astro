@@ -1,0 +1,19 @@
+---
+// src/pages/index.astro
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Architecture from '../components/Architecture.astro';
+---
+
+<Layout title="GoShort | Lightning Fast URL Shortener">
+  <Header />
+  <main>
+    <Hero />
+    <Architecture />
+  </main>
+  
+  <footer class="bg-slate-900 border-t border-slate-800 py-12 mt-auto text-center text-slate-400">
+    <p>&copy; {new Date().getFullYear()} GoShort. Built for speed.</p>
+  </footer>
+</Layout>

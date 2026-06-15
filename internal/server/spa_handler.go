@@ -29,14 +29,18 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	f, err := h.staticFS.Open(p)
 	if err == nil {
-		_, statErr := f.Stat()
+		stat, statErr := f.Stat()
 		f.Close()
-		if statErr == nil {
+		if statErr == nil && !stat.IsDir() {
 			h.fsHandler.ServeHTTP(w, r)
 			return
 		}
 	}
 
-	r.URL.Path = "/" + h.indexPath
+	if h.indexPath == "index.html" {
+		r.URL.Path = "/"
+	} else {
+		r.URL.Path = "/" + h.indexPath
+	}
 	h.fsHandler.ServeHTTP(w, r)
 }

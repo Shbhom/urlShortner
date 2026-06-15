@@ -2,5 +2,5 @@ package server
 
 import "embed"
 
-//go:embed ui/dist/*
+//go:embed all:ui/dist
 var embeddedUI embed.FS

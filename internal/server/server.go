@@ -49,6 +49,7 @@ func Run(envType string) {
 
 	// 3. Pass the cancellable context and WaitGroup
 	svc.StartAnalyticsWorker(ctx, &wg)
+	svc.StartCronJobs(ctx)
 	serve := &Server{
 		Router:   r,
 		Config:   config,

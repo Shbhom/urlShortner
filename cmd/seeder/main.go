@@ -8,7 +8,7 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/shbhom/urlShortner/internal/config"
-	"github.com/shbhom/urlShortner/internal/db"
+	"github.com/shbhom/urlShortner/internal/db/postgres"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	slog.Info("Connecting to Postgres...")
 	// IMPORTANT NOTE: db.NewPostgres returns a struct that contains `Client *sql.DB`.
 	// You MUST extract the Client to use it.
-	database := db.NewPostgres(cfg.DB_URL)
+	database := postgres.NewPostgres(cfg.DB_URL)
 	defer database.Client.Close()
 
 	slog.Info("Truncating table shornted_url...")

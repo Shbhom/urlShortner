@@ -1,5 +1,5 @@
 {
-  "title": "URL Shortener V1 Metrics",
+  "title": "URL Shortener Metrics",
   "panels": [
     {
       "title": "Throughput (RPS)",
@@ -51,6 +51,44 @@
       "targets": [
         { "expr": "rate(go_sql_wait_count_total[1m])", "legendFormat": "Wait Count/sec" },
         { "expr": "rate(go_sql_wait_duration_seconds_total[1m])", "legendFormat": "Wait Duration/sec" }
+      ]
+    },
+    {
+      "title": "Redis Cache Operations (Ops/sec)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        { "expr": "sum(rate(redis_hits_total[1m]))", "legendFormat": "Cache Hits" },
+        { "expr": "sum(rate(redis_misses_total[1m]))", "legendFormat": "Cache Misses" }
+      ]
+    },
+    {
+      "title": "Redis Latency (P95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(redis_get_duration_seconds_bucket[1m])) by (le))", "legendFormat": "GET P95" },
+        { "expr": "histogram_quantile(0.95, sum(rate(redis_set_duration_seconds_bucket[1m])) by (le))", "legendFormat": "SET P95" }
+      ]
+    },
+    {
+      "title": "Redis Connection Pool",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "targets": [
+        { "expr": "redis_pool_total_connections", "legendFormat": "Total" },
+        { "expr": "redis_pool_idle_connections", "legendFormat": "Idle" },
+        { "expr": "redis_pool_stale_connections", "legendFormat": "Stale" }
+      ]
+    },
+    {
+      "title": "Redis Memory Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "targets": [
+        { "expr": "redis_used_memory_bytes", "legendFormat": "Used" },
+        { "expr": "redis_used_memory_peak_bytes", "legendFormat": "Peak" },
+        { "expr": "redis_mem_fragmentation_ratio", "legendFormat": "Frag Ratio" }
       ]
     }
   ],

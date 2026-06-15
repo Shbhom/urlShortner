@@ -1,4 +1,15 @@
-# Stage 1 builder
+# Stage 1: Frontend Builder
+FROM node:22-alpine AS frontend-builder
+
+WORKDIR /app/Dashboard
+
+COPY Dashboard/package*.json ./
+RUN npm install
+
+COPY Dashboard/ ./
+RUN npm run build
+
+# Stage 2 builder
 
 FROM golang:1.26-alpine AS builder
 
@@ -8,6 +19,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+
+COPY --from=frontend-builder /app/Dashboard/dist ./internal/server/ui/dist
 
 #CGO -> binary is statically linked no external packages required
 RUN CGO_ENABLED=0 GOOS=linux go build -o url-shortener ./cmd/server/main.go

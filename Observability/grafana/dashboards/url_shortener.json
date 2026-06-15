@@ -78,7 +78,7 @@
       "targets": [
         { "expr": "redis_pool_total_connections", "legendFormat": "Total" },
         { "expr": "redis_pool_idle_connections", "legendFormat": "Idle" },
-        { "expr": "redis_pool_stale_connections", "legendFormat": "Stale" }
+        { "expr": "rate(redis_pool_stale_connections_total[1m])", "legendFormat": "Stale" }
       ]
     },
     {

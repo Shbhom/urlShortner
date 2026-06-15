@@ -18,11 +18,11 @@ func (db *DB) GetUrlByCode(ctx context.Context, short_code string) (string, erro
 	start := time.Now()
 	// 2. Ensure we record the duration when the function exits
 	defer func() {
-		metrics.PostgresReadDuration.Observe(time.Since(start).Seconds())
+		metrics.PostgresReadDuration.Record(ctx, time.Since(start).Seconds())
 	}()
 
 	// 3. Increment the total reads counter
-	metrics.PostgresReadsTotal.Inc()
+	metrics.PostgresReadsTotal.Add(ctx, 1)
 
 	var url string
 	if err := db.Client.QueryRowContext(ctx, `SELECT url from short_urls where shortnedkey = $1`, short_code).Scan(&url); err != nil {
@@ -38,12 +38,12 @@ func (db *DB) GetUrlByCode(ctx context.Context, short_code string) (string, erro
 func (db *DB) AddUrl(ctx context.Context, data models.UrlData) error {
 	start := time.Now()
 	defer func() {
-		metrics.PostgresCreationDuration.Observe(time.Since(start).Seconds())
+		metrics.PostgresCreationDuration.Record(ctx, time.Since(start).Seconds())
 	}()
 	if _, err := db.Client.ExecContext(ctx, `INSERT into short_urls (shortnedkey,url) VALUES ($1,$2)`, data.ShortCode, data.TargetUrl); err != nil {
 		return fmt.Errorf("Error while inserting short Url to db: %w", err)
 	}
-	metrics.ShortUrlsCreatedTotal.Inc()
+	metrics.ShortUrlsCreatedTotal.Add(ctx, 1)
 	return nil
 }
 

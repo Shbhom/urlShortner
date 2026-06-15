@@ -1,2 +1,5 @@
 docs/
 coverage.out
+**/results/
+server
+cmd/seeder/

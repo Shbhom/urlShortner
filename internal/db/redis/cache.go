@@ -44,12 +44,12 @@ func NewCache(redisAddr string, urlTTL time.Duration) *Cache {
 func (c *Cache) Get(ctx context.Context, shortCode string) (string, error) {
 	start := time.Now()
 	res, err := c.Client.Get(ctx, fmt.Sprintf("url:%s", shortCode)).Result()
-	metrics.RedisGetDurationSeconds.Observe(time.Since(start).Seconds())
+	metrics.RedisGetDurationSeconds.Record(ctx, time.Since(start).Seconds())
 	switch err {
 	case redis.Nil:
-		metrics.RedisMissesTotal.Inc()
+		metrics.RedisMissesTotal.Add(ctx, 1)
 	case nil:
-		metrics.RedisHitsTotal.Inc()
+		metrics.RedisHitsTotal.Add(ctx, 1)
 	}
 	return res, err
 }
@@ -57,7 +57,7 @@ func (c *Cache) Get(ctx context.Context, shortCode string) (string, error) {
 func (c *Cache) Set(ctx context.Context, data models.UrlData) error {
 	start := time.Now()
 	err := c.Client.Set(ctx, fmt.Sprintf("url:%s", data.ShortCode), data.TargetUrl, c.TTL).Err()
-	metrics.RedisSetDurationSeconds.Observe(time.Since(start).Seconds())
+	metrics.RedisSetDurationSeconds.Record(ctx, time.Since(start).Seconds())
 	return err
 }
 

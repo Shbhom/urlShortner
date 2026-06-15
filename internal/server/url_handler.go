@@ -12,6 +12,8 @@ import (
 	"github.com/shbhom/urlShortner/internal/db/postgres"
 	"github.com/shbhom/urlShortner/internal/models"
 	"github.com/shbhom/urlShortner/internal/pkg/metrics"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 func (s *Server) AddUrlHandler() http.HandlerFunc {
@@ -50,26 +52,35 @@ func (s *Server) RedirectionHandler() http.HandlerFunc {
 		slog.Info("handling redirection request")
 		start := time.Now()
 		defer func() {
-			metrics.RedirectRequestHistogram.Observe(time.Since(start).Seconds())
+			metrics.RedirectRequestHistogram.Record(r.Context(), time.Since(start).Seconds())
 		}()
 
 		code := mux.Vars(r)["code"]
 		url, err := s.Services.GetUrl(r.Context(), code)
 		if err != nil {
 			if errors.Is(err, postgres.ErrURLNotFound) {
-				metrics.RedirectNotFoundTotal.Inc()
-				metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "404").Inc()
+				metrics.RedirectNotFoundTotal.Add(r.Context(), 1)
+				metrics.RedirectRequestsTotal.Add(r.Context(), 1, metric.WithAttributes(
+					attribute.String("endpoint", "/r/:code"),
+					attribute.String("status", "404"),
+				))
 				slog.Error("error while fetching target Url", "error", err.Error())
 				s.RespondMessage(w, &RespondMessage{Message: "No record found for provided code"}, http.StatusNotFound)
 				return
 			}
 			slog.Error("Error while fetching target Url", "error", err.Error())
-			metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "500").Inc()
+			metrics.RedirectRequestsTotal.Add(r.Context(), 1, metric.WithAttributes(
+				attribute.String("endpoint", "/r/:code"),
+				attribute.String("status", "500"),
+			))
 			s.RespondMessage(w, &RespondMessage{Message: "Error while fetching target Url"}, http.StatusInternalServerError)
 			return
 		}
-		metrics.RedirectionSuccessTotal.Inc()
-		metrics.RedirectRequestsTotal.WithLabelValues("/r/:code", "302").Inc()
+		metrics.RedirectionSuccessTotal.Add(r.Context(), 1)
+		metrics.RedirectRequestsTotal.Add(r.Context(), 1, metric.WithAttributes(
+			attribute.String("endpoint", "/r/:code"),
+			attribute.String("status", "302"),
+		))
 		http.Redirect(w, r, url, http.StatusFound)
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shbhom/urlShortner/internal/config"
 	"github.com/shbhom/urlShortner/internal/services"
 )
@@ -24,7 +23,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) routes() {
 	s.Router.HandleFunc("/url", s.AddUrlHandler()).Methods(http.MethodPost)
 	s.Router.HandleFunc("/r/{code}", s.RedirectionHandler()).Methods(http.MethodGet)
-	s.Router.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 }
 
 type RespondMessage struct {

@@ -6,7 +6,7 @@ export const options = {
         safe_load: {
             executor: 'shared-iterations',
             vus: 200,
-            iterations: 1000000,
+            iterations: 100000,
             maxDuration: '10m',
         },
     },

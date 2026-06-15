@@ -25,14 +25,33 @@ func Run(envType string) {
 	config := config.LoadConfig(envType)
 	r := mux.NewRouter()
 
+	// Initialize OTel
+	shutdown, err := metrics.InitProvider(context.Background())
+	if err != nil {
+		log.Printf("Failed to initialize OTel: %v", err)
+	} else {
+		defer shutdown(context.Background())
+	}
+
+	err = metrics.InitMetrics()
+	if err != nil {
+		log.Fatalf("Failed to initialize metrics instruments: %v", err)
+	}
+
 	// Initialize DB and Cache
 	db := postgres.NewPostgres(config.DB_URL)
 	cacheTTL := time.Duration(config.URL_TTL * int(time.Minute))
 	redisCache := redis.NewCache(config.REDIS_ADDR, cacheTTL)
 
-	// Register Metrics
-	metrics.RegisterDBStatsCollector(db.Client)
-	metrics.RegisterRedisStatsCollector(redisCache.Client)
+	// Register Metrics Collectors
+	err = metrics.RegisterDBStatsCollector(db.Client)
+	if err != nil {
+		log.Printf("Failed to register DB stats collector: %v", err)
+	}
+	err = metrics.RegisterRedisStatsCollector(redisCache.Client)
+	if err != nil {
+		log.Printf("Failed to register Redis stats collector: %v", err)
+	}
 
 	svc := services.NewService(config.SHORT_CODE_MIN_LEN, db, redisCache)
 

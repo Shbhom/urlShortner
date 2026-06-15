@@ -1,5 +1,9 @@
 docs/
 coverage.out
 **/results/
-server
 cmd/seeder/*
+**/dist/
+**/docs/
+**/node_modules/
+**/node-compile-cache/
+.worktrees/

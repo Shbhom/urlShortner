@@ -80,3 +80,11 @@ func (db *DB) BulkUpdateUrlLastInvokation(ctx context.Context, data map[string]s
 	}
 	return tx.Commit()
 }
+
+func (db *DB) PurgeOldURLs(ctx context.Context) (int64, error) {
+	res, err := db.Client.ExecContext(ctx, "DELETE FROM short_urls WHERE last_invokation < NOW() - INTERVAL '1 year'")
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}

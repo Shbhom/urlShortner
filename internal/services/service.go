@@ -14,6 +14,7 @@ type URLRepository interface {
 	AddUrl(ctx context.Context, data models.UrlData) error
 	GetUrlByCode(ctx context.Context, short_code string) (string, error)
 	BulkUpdateUrlLastInvokation(ctx context.Context, data map[string]string) error
+	PurgeOldURLs(ctx context.Context) (int64, error)
 }
 
 type CacheRepository interface {

@@ -14,9 +14,9 @@ import (
 
 type FakeURLRepo struct {
 	sync.RWMutex
-	urls                           map[string]models.UrlData
-	seq                            uint64
-	bulkUpdates                    []map[string]string
+	urls                         map[string]models.UrlData
+	seq                          uint64
+	bulkUpdates                  []map[string]string
 	SimulateGetNextSequenceError bool
 	SimulateBulkUpdateError      bool
 }
@@ -157,4 +157,9 @@ func (f *FakeCacheRepo) GetHashesCount() int {
 	f.RLock()
 	defer f.RUnlock()
 	return len(f.hashes)
+}
+
+func (f *FakeURLRepo) PurgeOldURLs(ctx context.Context) (int64, error) {
+	// For testing, we can just return 0 rows deleted and no error
+	return 0, nil
 }

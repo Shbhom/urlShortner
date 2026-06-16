@@ -4,12 +4,12 @@ FROM node:22-alpine AS frontend-builder
 WORKDIR /app/Dashboard
 
 COPY Dashboard/package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY Dashboard/ ./
 RUN npm run build
 
-# Stage 2 builder
+# Stage 2: Go Builder
 
 FROM golang:1.26-alpine AS builder
 

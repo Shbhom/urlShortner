@@ -21,7 +21,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) routes() {
-	s.Router.HandleFunc("/url", s.AddUrlHandler()).Methods(http.MethodPost)
+	s.Router.HandleFunc("/url", s.enableCors(s.AddUrlHandler())).Methods(http.MethodPost, http.MethodOptions)
 	s.Router.HandleFunc("/r/{code}", s.RedirectionHandler()).Methods(http.MethodGet)
 }
 

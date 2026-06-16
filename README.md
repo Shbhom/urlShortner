@@ -35,7 +35,7 @@ The frontend is a lightning-fast Astro SPA. Instead of relying on a separate Ngi
 *   **Why:** This modern deployment pattern ships the entire application—backend API, routing, and frontend UI—as a single, statically linked, self-contained binary, dramatically simplifying CI/CD and infrastructure overhead.
 
 ### 7. Embedded Cron Scheduling
-Rather than relying on external Linux `crontab` or Kubernetes `CronJobs`, the system embeds a lightweight, context-aware cron scheduler (`robfig/cron`) directly within the Go application to handle daily database purging tasks.
+Rather than relying on external Linux `crontab`, the system embeds a lightweight, context-aware cron scheduler (`robfig/cron`) directly within the Go application to handle daily database purging tasks.
 *   **Why:** Tying the cron scheduler to the main `context.Context` ensures that scheduled tasks gracefully halt when the server receives a termination signal, centralizing task lifecycle management and preventing zombie processes during deployments.
 
 ## ⚙️ Environment Variables

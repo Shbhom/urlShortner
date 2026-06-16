@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"io/fs"
 	"log/slog"
 	"net/http"
 
@@ -23,6 +24,16 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) routes() {
 	s.Router.HandleFunc("/url", s.enableCors(s.AddUrlHandler())).Methods(http.MethodPost, http.MethodOptions)
 	s.Router.HandleFunc("/r/{code}", s.RedirectionHandler()).Methods(http.MethodGet)
+
+	// Extract the subdirectory from embedded files
+	distFS, err := fs.Sub(embeddedUI, "ui/dist")
+	if err != nil {
+		// Log error but allow API routes to function if UI is missing locally
+		slog.Error("Failed to extract embedded UI filesystem", "error", err)
+	} else {
+		spa := newSPAHandler(distFS, "index.html")
+		s.Router.PathPrefix("/").Handler(spa)
+	}
 }
 
 type RespondMessage struct {

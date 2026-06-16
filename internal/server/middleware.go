@@ -13,7 +13,7 @@ func (s *Server) enableCors(handler http.HandlerFunc) http.HandlerFunc {
 		origin := r.Header.Get("Origin")
 		allowedOrigins := []string{
 			"http://localhost:8000",
-			s.Config.BASE_URL,
+			getBaseURL(r),
 		}
 
 		originAllowed := false

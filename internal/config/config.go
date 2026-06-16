@@ -15,7 +15,6 @@ type Config struct {
 	REDIS_ADDR         string
 	URL_TTL            int
 	SHORT_CODE_MIN_LEN uint8
-	BASE_URL           string
 	API_PORT           int
 	ChainCertPath      string
 	PemCertPath        string
@@ -45,14 +44,6 @@ func LoadConfig(envType string) *Config {
 
 	if v.IsSet("DB_URL") {
 		conf.DB_URL = v.GetString("DB_URL")
-	}
-	if v.IsSet("BASE_URL") {
-		conf.BASE_URL = v.GetString("BASE_URL")
-	} else {
-		// base url for service to be deployed on render
-		if v.IsSet("RENDER_EXTERNAL_URL") {
-			conf.BASE_URL = v.GetString("RENDER_EXTERNAL_URL")
-		}
 	}
 	if v.IsSet("API_PORT") {
 		conf.API_PORT = v.GetInt("API_PORT")
@@ -87,9 +78,6 @@ func LoadConfig(envType string) *Config {
 	}
 	if conf.API_PORT == 0 {
 		log.Fatal("API_PORT is required")
-	}
-	if conf.BASE_URL == "" {
-		log.Fatal("BASE_URL is required")
 	}
 
 	return &conf

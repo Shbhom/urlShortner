@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -15,6 +16,24 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
+
+func getBaseURL(r *http.Request) string {
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		scheme = proto
+	}
+
+	host := r.Host
+	if forwardedHost := r.Header.Get("X-Forwarded-Host"); forwardedHost != "" {
+		// Sometimes proxies send a comma-separated list, the first one is the original client
+		host = strings.Split(forwardedHost, ",")[0]
+	}
+
+	return fmt.Sprintf("%s://%s", scheme, host)
+}
 
 func (s *Server) AddUrlHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +57,7 @@ func (s *Server) AddUrlHandler() http.HandlerFunc {
 			s.RespondMessage(w, &RespondMessage{Message: "Error while adding record to db"}, http.StatusInternalServerError)
 			return
 		}
-		shortUrl := fmt.Sprintf("%s/r/%s", s.Config.BASE_URL, code)
+		shortUrl := fmt.Sprintf("%s/r/%s", getBaseURL(r), code)
 		var resp struct {
 			ShortUrl string `json:"shortUrl"`
 		}

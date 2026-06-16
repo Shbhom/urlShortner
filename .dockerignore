@@ -6,3 +6,8 @@ README.md
 .env
 config_*.json
 /.shortner
+Dashboard/node_modules
+Dashboard/dist
+Dashboard/.astro
+Dashboard/.env.*
+!Dashboard/.env

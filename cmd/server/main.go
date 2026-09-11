@@ -7,11 +7,9 @@ import (
 )
 
 func main() {
-
 	env := os.Getenv("ENV")
 	if env == "" {
 		env = "local"
 	}
-
 	server.Run(env)
 }

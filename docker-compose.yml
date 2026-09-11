@@ -7,6 +7,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -15,6 +17,8 @@ services:
 
   redis:
     image: redis:7-alpine
+    networks:
+      - app
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -26,6 +30,8 @@ services:
     volumes:
       - ./internal/db/migrations:/migrations:ro
     command: ["-path=/migrations", "-database", "${DB_URL}", "up"]
+    networks:
+      - app
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,6 +45,9 @@ services:
       - "${HOST_PORT}:${API_PORT}"
     volumes:
       - ./config.json:/app/config.json
+    networks:
+      - app
+      - tunnel
     depends_on:
       redis:
         condition: service_healthy
@@ -47,3 +56,10 @@ services:
 
 volumes:
   postgres_data:
+
+networks:
+  app:
+    driver: bridge
+
+  tunnel:
+    external: true

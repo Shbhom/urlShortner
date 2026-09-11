@@ -80,6 +80,10 @@ services:
       - "3000:3000"
     networks:
       - app
+      - tunnel
+    environment:
+      GF_SERVER_ROOT_URL: https://grafana.shubhom.in
+      GF_SERVER_DOMAIN: grafana.shubhom.in
     depends_on:
       prometheus:
         condition: service_started

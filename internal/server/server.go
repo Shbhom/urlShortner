@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +18,7 @@ import (
 	"github.com/shbhom/urlShortner/internal/db/redis"
 	"github.com/shbhom/urlShortner/internal/pkg/metrics"
 	"github.com/shbhom/urlShortner/internal/services"
+	"golang.org/x/exp/slog"
 )
 
 func Run(envType string) {
@@ -39,9 +39,17 @@ func Run(envType string) {
 	}
 
 	// Initialize DB and Cache
-	db := postgres.NewPostgres(config.DB_URL)
+	db, err := postgres.NewPostgres(config.DB_URL)
+	if err != nil {
+		slog.Error("error while creating new postgres client", "error", err)
+		os.Exit(1)
+	}
 	cacheTTL := time.Duration(config.URL_TTL * int(time.Minute))
-	redisCache := redis.NewCache(config.REDIS_ADDR, cacheTTL)
+	redisCache, err := redis.NewCache(config.REDIS_ADDR, cacheTTL)
+	if err != nil {
+		slog.Error("error while creating new redis client", "error", err)
+		os.Exit(1)
+	}
 
 	// Register Metrics Collectors
 	err = metrics.RegisterDBStatsCollector(db.Client)

@@ -7,3 +7,7 @@ cmd/seeder/*
 **/node_modules/
 **/node-compile-cache/
 .worktrees/
+.env
+
+*.json
+internal/server/ui/dist/*

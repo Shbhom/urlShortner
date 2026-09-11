@@ -30,12 +30,11 @@ FROM alpine:latest AS runner
 
 RUN apk --no-cache add ca-certificates
 
-RUN adduser -D nonroot
 
 WORKDIR /app
 
 COPY --from=builder /app/url-shortener  .
 
-USER nonroot
+EXPOSE 8000
 
 ENTRYPOINT ["./url-shortener"]

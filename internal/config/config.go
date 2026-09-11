@@ -23,14 +23,20 @@ type Config struct {
 func LoadConfig(envType string) *Config {
 	conf := Config{}
 	v := viper.New()
-	dir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal("Error while fetching user's Home Dir")
+	var config_path string
+	if envType == "docker" {
+		config_path = "/app/config.json"
+	} else {
+		dir, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal("Error while fetching user's Home Dir")
+		}
+		configDir := path.Join(dir, "/.shortner")
+		v.SetConfigType("json")
+		config_path = fmt.Sprintf("%s/config.json", configDir)
 	}
-	configDir := path.Join(dir, "/.shortner")
-	v.SetConfigType("json")
-	v.SetConfigFile(fmt.Sprintf("%s/config_%s.json", configDir, envType))
 
+	v.SetConfigFile(config_path)
 	if err := v.ReadInConfig(); err != nil {
 		if os.IsNotExist(err) {
 			slog.Warn("couldn't find Config file: reading env")

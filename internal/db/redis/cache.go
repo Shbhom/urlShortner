@@ -3,12 +3,12 @@ package redis
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/shbhom/urlShortner/internal/models"
 	"github.com/shbhom/urlShortner/internal/pkg/metrics"
+	"golang.org/x/exp/slog"
 )
 
 type Cache struct {
@@ -21,24 +21,25 @@ var (
 	ANALYTICS_NEW_KEY = "analytics_processing:%s"
 )
 
-func NewCache(redisAddr string, urlTTL time.Duration) *Cache {
+func NewCache(redisAddr string, urlTTL time.Duration) (*Cache, error) {
 	var client *redis.Client
 	if Opts, err := redis.ParseURL(redisAddr); err != nil {
-		log.Fatal("error while parsing redis Opts")
+		return nil, fmt.Errorf("error while parsing redis Opts")
 	} else {
 		client = redis.NewClient(Opts)
 	}
 	if client == nil {
-		log.Fatal("unable to connect redis")
+		return nil, fmt.Errorf("unable to connect redis")
 	}
+	slog.Info("Successfully connected to redis", "redis Addr", redisAddr)
 	ctx := context.Background()
 	if cmd := client.Ping(ctx); cmd.Err() != nil {
-		log.Fatal("Unable to ping, redis client")
+		return nil, fmt.Errorf("Unable to ping, redis client")
 	}
 	return &Cache{
 		Client: client,
 		TTL:    urlTTL,
-	}
+	}, nil
 }
 
 func (c *Cache) Get(ctx context.Context, shortCode string) (string, error) {

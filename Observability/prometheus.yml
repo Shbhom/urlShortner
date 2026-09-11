@@ -1,7 +1,2 @@
 global:
-  scrape_interval: 2s # Scrape frequently so we see changes instantly in the load test
-
-scrape_configs:
-  - job_name: 'url-shortener'
-    static_configs:
-      - targets: ['shortner:8000']
+  scrape_interval: 5s # Scrape frequently so we see changes instantly in the load test
